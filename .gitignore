@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Databases / Data
+*.db
+*.sqlite3
+*.sql
+bombs_dataset.json
+
+# Large files and datasets
+*.zip
+CTX-UXO/
+extracted/
+uploads/
+tmp/
+images/

@@ -1,0 +1,727 @@
+Created At: 2026-06-27T23:34:10Z
+Completed At: 2026-06-27T23:34:10Z
+File Path: `file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/templates/index.html`
+Total Lines: 719
+Total Bytes: 24858
+Showing lines 1 to 719
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: {% extends "layout.html" %}
+2: 
+3: {% block content %}
+4: <div class="dashboard-header">
+5:     <h1>Explosives Database</h1>
+6:     <p>Secure catalog of known ordnance and explosive materials.</p>
+7: </div>
+8: 
+9: <!-- ── Name Search ─────────────────────────────────────── -->
+10: <div class="search-section">
+11:     <div class="search-box-wrapper">
+12:         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+13:             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+14:         </svg>
+15:         <input
+16:             type="text"
+17:             id="nameSearchInput"
+18:             class="search-input"
+19:             placeholder="Search by explosive name…  e.g. C4, PMN, Semtex"
+20:             autocomplete="off"
+21:         >
+22:         <button class="search-clear" id="searchClearBtn" title="Clear" style="display:none;">✕</button>
+23:     </div>
+24:     <div id="searchResults" class="search-results-panel" style="display:none;"></div>
+25: </div>
+26: 
+27: <div class="grid-container">
+28:     <!-- Add Item Panel -->
+29:     <div class="card glass-card">
+30:         {% if user %}
+31:         <h3>Add New Material</h3>
+32:         <form action="/explosives/add" method="post" enctype="multipart/form-data" class="form-stack">
+33:             <div class="input-group">
+34:                 <label>Name</label>
+35:                 <input type="text" name="name" placeholder="e.g. C4 Block" required>
+36:             </div>
+37:             <div class="input-group">
+38:                 <label>Type</label>
+39:                 <select name="explosive_type">
+40:                     <option value="bomb">Bomb / IED</option>
+41:                     <option value="mine">Land Mine</option>
+42:                     <option value="grenade">Grenade</option>
+43:                     <option value="plastic">Plastic Explosive</option>
+44:                     <option value="other">Other</option>
+45:                 </select>
+46:             </div>
+47:             <div class="input-group">
+48:                 <label>Danger Level (1-5)</label>
+49:                 <input type="number" name="danger_level" min="1" max="5" value="3" required>
+50:             </div>
+51:             <div class="input-group">
+52:                 <label>Description</label>
+53:                 <textarea name="description" rows="3" placeholder="Technical specifications..." required></textarea>
+54:             </div>
+55:             <div class="input-grid-mini">
+56:                 <div class="input-group">
+57:                     <label>Country of Make</label>
+58:                     <input type="text" name="country_of_origin" placeholder="e.g. USA">
+59:                 </div>
+60:                 <div class="input-group">
+61:                     <label>Weight</label>
+62:                     <input type="text" name="weight" placeholder="e.g. 5kg">
+63:                 </div>
+64:             </div>
+65:             <div class="input-group">
+66:                 <label>Method of Ignition</label>
+67:                 <input type="text" name="ignition_method" placeholder="e.g. Electric Detonator">
+68:             </div>
+69:             <div class="input-group">
+70:                 <label>Role / Use</label>
+71:                 <input type="text" name="role" placeholder="e.g. Anti-tank">
+72:             </div>
+73:             <div class="input-group">
+74:                 <label>Reference Image</label>
+75:                 <input type="file" name="file" accept="image/*" required>
+76:             </div>
+77:             <button type="submit" class="btn btn-primary" style="width: 100%;">Record Entry</button>
+78:         </form>
+79:         {% else %}
+80:         <h3>Access Restricted</h3>
+81:         <p style="color: var(--text-secondary); margin: 1.5rem 0; font-size: 0.9rem; line-height: 1.5;">You must be authenticated to add new materials or modify the industrial explosives registry.</p>
+82:         <a href="/login" class="btn btn-primary" style="width: 100%;">Sign In to EORIS</a>
+83:         {% endif %}
+84:     </div>
+85: 
+86:     <!-- Inventory List -->
+87:     <div class="scroll-area">
+88:         <div class="inventory-grid">
+89:             {% for item in items %}
+90:             <div class="item-card glass-card">
+91:                 <img src="{{ item.image_url }}" alt="{{ item.name }}" class="item-thumb">
+92:                 <div class="item-info">
+93:                     <span class="badge badge-danger">Level {{ item.danger_level if item.danger_level else 'N/A' }}</span>
+94:                     <h4>{{ item.name }}</h4>
+95:                     <p class="type-tag">{{ item.explosive_type.upper() if item.explosive_type else 'UNKNOWN' }}</p>
+96:                     <p class="desc-text">{{ item.description if item.description else 'No description available.' }}</p>
+97:                     
+98:                     <div class="tech-specs">
+99:                         {% if item.country_of_origin %}<div><span>Origin:</span> {{ item.country_of_origin }}</div>{% endif %}
+100:                         {% if item.weight %}<div><span>Weight:</span> {{ item.weight }}</div>{% endif %}
+101:                         {% if item.ignition_method %}<div><span>Ignition:</span> {{ item.ignition_method }}</div>{% endif %}
+102:                         {% if item.role %}<div><span>Role:</span> {{ item.role }}</div>{% endif %}
+103:                     </div>
+104: 
+105:                     <div class="metadata-summary" style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--glass-border);">
+106:                         {% if item.metadata_signature and item.metadata_signature is mapping %}
+107:                             <div class="extended-specs" style="font-size: 0.85rem; color: var(--text-secondary); display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+108:                                 {% for key, value in item.metadata_signature.items() %}
+109:                                     {% if key not in ['Model', 'Software', 'image', 'annotations', 'ID'] %}
+110:                                         <div><strong style="color: var(--text-primary);">{{ key }}:</strong> 
+111:                                             {% if value is string %}
+112:                                                 {{ value }}
+113:                                             {% elif value is iterable %}
+114:                                                 {{ value|join(', ') }}
+115:                                             {% else %}
+116:                                                 {{ value }}
+117:                                             {% endif %}
+118:                                         </div>
+119:                                     {% endif %}
+120:                                 {% endfor %}
+121:                             </div>
+122:                         {% else %}
+123:                             <small>Hash: {{ item.image_hash[:12] if item.image_hash else 'No hash' }}...</small>
+124:                         {% endif %}
+125:                     </div>
+126:                 </div>
+127:             </div>
+128:             {% else %}
+129:             <div class="empty-state">
+130:                 <p>No records found. Add an entry to begin.</p>
+131:             </div>
+132:             {% endfor %}
+133:         </div>
+134:     </div>
+135: </div>
+136: 
+137: <style>
+138:     .dashboard-header {
+139:         margin-bottom: 2rem;
+140:     }
+141: 
+142:     .dashboard-header h1 {
+143:         font-size: 2.5rem;
+144:         background: linear-gradient(to right, #fff, #9ca3af);
+145:         -webkit-background-clip: text;
+146:         background-clip: text;
+147:         -webkit-text-fill-color: transparent;
+148:     }
+149: 
+150:     .grid-container {
+151:         display: grid;
+152:         grid-template-columns: 350px 1fr;
+153:         gap: 2rem;
+154:     }
+155: 
+156:     .card {
+157:         padding: 1.5rem;
+158:         border-radius: 12px;
+159:         background: var(--surface-color);
+160:         border: 1px solid var(--glass-border);
+161:     }
+162: 
+163:     .glass-card {
+164:         background: var(--glass-bg);
+165:         backdrop-filter: blur(5px);
+166:     }
+167: 
+168:     .form-stack {
+169:         display: flex;
+170:         flex-direction: column;
+171:         gap: 1rem;
+172:         margin-top: 1rem;
+173:     }
+174: 
+175:     .input-group label {
+176:         display: block;
+177:         font-size: 0.8rem;
+178:         margin-bottom: 0.4rem;
+179:         color: var(--text-secondary);
+180:         font-weight: 600;
+181:     }
+182: 
+183:     .input-group input, .input-group select, .input-group textarea {
+184:         width: 100%;
+185:         padding: 0.6rem;
+186:         background: #111;
+187:         border: 1px solid #333;
+188:         color: #fff;
+189:         border-radius: 6px;
+190:         font-family: inherit;
+191:     }
+192: 
+193:     .input-group input:focus {
+194:         border-color: var(--accent-color);
+195:         outline: none;
+196:     }
+197: 
+198:     .input-grid-mini {
+199:         display: grid;
+200:         grid-template-columns: 1fr 1fr;
+201:         gap: 1rem;
+202:     }
+203: 
+204:     .tech-specs {
+205:         font-size: 0.75rem;
+206:         color: var(--text-secondary);
+207:         margin: 0.5rem 0;
+208:         display: flex;
+209:         flex-direction: column;
+210:         gap: 0.2rem;
+211:         padding: 0.5rem;
+212:         background: rgba(255,255,255,0.03);
+213:         border-radius: 4px;
+214:     }
+215: 
+216:     .tech-specs span {
+217:         font-weight: 700;
+218:         color: var(--accent-color);
+219:         margin-right: 0.3rem;
+220:     }
+221: 
+222:     .inventory-grid {
+223:         display: grid;
+224:         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+225:         gap: 1.5rem;
+226:     }
+227: 
+228:     .item-card {
+229:         display: flex;
+230:         flex-direction: column;
+231:         overflow: hidden;
+232:         border-radius: 12px;
+233:         transition: transform 0.3s ease;
+234:     }
+235: 
+236:     .item-card:hover {
+237:         transform: scale(1.02);
+238:     }
+239: 
+240:     .item-thumb {
+241:         width: 100%;
+242:         height: 180px;
+243:         object-fit: cover;
+244:         border-bottom: 1px solid var(--glass-border);
+245:     }
+246: 
+247:     .item-info {
+248:         padding: 1rem;
+249:     }
+250: 
+251:     .badge {
+252:         font-size: 0.7rem;
+253:         padding: 0.2rem 0.5rem;
+254:         border-radius: 4px;
+255:         font-weight: 800;
+256:         text-transform: uppercase;
+257:         margin-bottom: 0.5rem;
+258:         display: inline-block;
+259:     }
+260: 
+261:     .badge-danger {
+262:         background: rgba(239, 68, 68, 0.2);
+263:         color: var(--danger-color);
+264:         border: 1px solid var(--danger-color);
+265:     }
+266: 
+267:     .type-tag {
+268:         font-family: 'JetBrains Mono', monospace;
+269:         font-size: 0.75rem;
+270:         color: var(--accent-color);
+271:     }
+272: 
+273:     .desc-text {
+274:         font-size: 0.85rem;
+275:         color: var(--text-secondary);
+276:         margin: 0.5rem 0;
+277:         display: -webkit-box;
+278:         -webkit-line-clamp: 3;
+279:         line-clamp: 3;
+280:         -webkit-box-orient: vertical;
+281:         overflow: hidden;
+282:     }
+283: 
+284:     @media (max-width: 900px) {
+285:         .grid-container {
+286:             grid-template-columns: 1fr;
+287:         }
+288:     }
+289: 
+290:     /* ── Name Search ───────────────────────────────────────── */
+291:     .search-section {
+292:         position: relative;
+293:         margin-bottom: 2rem;
+294:     }
+295: 
+296:     .search-box-wrapper {
+297:         position: relative;
+298:         display: flex;
+299:         align-items: center;
+300:     }
+301: 
+302:     .search-icon {
+303:         position: absolute;
+304:         left: 1rem;
+305:         width: 18px;
+306:         height: 18px;
+307:         color: var(--text-secondary);
+308:         pointer-events: none;
+309:         flex-shrink: 0;
+310:     }
+311: 
+312:     .search-input {
+313:         width: 100%;
+314:         padding: 0.85rem 3rem 0.85rem 2.8rem;
+315:         background: var(--glass-bg);
+316:         border: 1px solid var(--glass-border);
+317:         color: #fff;
+318:         border-radius: 10px;
+319:         font-family: inherit;
+320:         font-size: 0.95rem;
+321:         backdrop-filter: blur(8px);
+322:         transition: border-color 0.2s, box-shadow 0.2s;
+323:         box-sizing: border-box;
+324:     }
+325: 
+326:     .search-input:focus {
+327:         outline: none;
+328:         border-color: var(--accent-color);
+329:         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+330:     }
+331: 
+332:     .search-input::placeholder {
+333:         color: #555;
+334:     }
+335: 
+336:     .search-clear {
+337:         position: absolute;
+338:         right: 0.9rem;
+339:         background: none;
+340:         border: none;
+341:         color: var(--text-secondary);
+342:         font-size: 1rem;
+343:         cursor: pointer;
+344:         padding: 0.2rem 0.4rem;
+345:         border-radius: 4px;
+346:         line-height: 1;
+347:         transition: color 0.2s;
+348:     }
+349:     .search-clear:hover { color: #fff; }
+350: 
+351:     /* Results panel */
+352:     .search-results-panel {
+353:         position: absolute;
+354:         top: calc(100% + 0.5rem);
+355:         left: 0;
+356:         right: 0;
+357:         z-index: 200;
+358:         background: #0d0d14;
+359:         border: 1px solid var(--glass-border);
+360:         border-radius: 12px;
+361:         max-height: 520px;
+362:         overflow-y: auto;
+363:         backdrop-filter: blur(12px);
+364:         box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+365:         padding: 0.5rem;
+366:     }
+367: 
+368:     .search-result-card {
+369:         display: flex;
+370:         gap: 1rem;
+371:         padding: 0.9rem;
+372:         border-radius: 8px;
+373:         cursor: pointer;
+374:         transition: background 0.15s;
+375:         border-bottom: 1px solid rgba(255,255,255,0.05);
+376:     }
+377:     .search-result-card:last-child { border-bottom: none; }
+378:     .search-result-card:hover { background: rgba(255,255,255,0.06); }
+379: 
+380:     .result-thumb {
+381:         width: 90px;
+382:         height: 70px;
+383:         object-fit: cover;
+384:         border-radius: 6px;
+385:         flex-shrink: 0;
+386:         border: 1px solid var(--glass-border);
+387:         background: #111;
+388:     }
+389: 
+390:     .result-body {
+391:         flex: 1;
+392:         min-width: 0;
+393:     }
+394: 
+395:     .result-name {
+396:         font-size: 1rem;
+397:         font-weight: 700;
+398:         color: #fff;
+399:         margin-bottom: 0.2rem;
+400:     }
+401: 
+402:     .result-type {
+403:         font-family: 'JetBrains Mono', monospace;
+404:         font-size: 0.7rem;
+405:         color: var(--accent-color);
+406:         text-transform: uppercase;
+407:         margin-bottom: 0.3rem;
+408:     }
+409: 
+410:     .result-desc {
+411:         font-size: 0.8rem;
+412:         color: var(--text-secondary);
+413:         display: -webkit-box;
+414:         -webkit-line-clamp: 2;
+415:         line-clamp: 2;
+416:         -webkit-box-orient: vertical;
+417:         overflow: hidden;
+418:     }
+419: 
+420:     .result-meta {
+421:         display: flex;
+422:         gap: 0.8rem;
+423:         margin-top: 0.4rem;
+424:         flex-wrap: wrap;
+425:     }
+426: 
+427:     .result-meta span {
+428:         font-size: 0.72rem;
+429:         color: #666;
+430:     }
+431: 
+432:     .result-meta strong {
+433:         color: var(--accent-color);
+434:     }
+435: 
+436:     .result-badge {
+437:         font-size: 0.68rem;
+438:         padding: 0.15rem 0.45rem;
+439:         border-radius: 3px;
+440:         font-weight: 800;
+441:         background: rgba(239,68,68,0.15);
+442:         color: var(--danger-color);
+443:         border: 1px solid var(--danger-color);
+444:         margin-left: auto;
+445:         align-self: flex-start;
+446:         flex-shrink: 0;
+447:         white-space: nowrap;
+448:     }
+449: 
+450:     .search-no-result {
+451:         text-align: center;
+452:         padding: 2rem 1rem;
+453:         color: var(--text-secondary);
+454:         font-size: 0.9rem;
+455:     }
+456: 
+457:     .search-spinner {
+458:         text-align: center;
+459:         padding: 1.5rem;
+460:         color: var(--text-secondary);
+461:         font-size: 0.85rem;
+462:     }
+463: 
+464:     /* Modal overlay for expanded result */
+465:     .result-modal-overlay {
+466:         display: none;
+467:         position: fixed;
+468:         inset: 0;
+469:         z-index: 999;
+470:         background: rgba(0,0,0,0.75);
+471:         backdrop-filter: blur(4px);
+472:         align-items: center;
+473:         justify-content: center;
+474:     }
+475:     .result-modal-overlay.active { display: flex; }
+476: 
+477:     .result-modal {
+478:         background: #0f0f1a;
+479:         border: 1px solid var(--glass-border);
+480:         border-radius: 16px;
+481:         width: min(680px, 94vw);
+482:         max-height: 88vh;
+483:         overflow-y: auto;
+484:         box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+485:         animation: modalIn 0.25s ease;
+486:     }
+487: 
+488:     @keyframes modalIn {
+489:         from { opacity:0; transform:scale(0.94) translateY(12px); }
+490:         to   { opacity:1; transform:scale(1) translateY(0); }
+491:     }
+492: 
+493:     .result-modal-img {
+494:         width: 100%;
+495:         max-height: 300px;
+496:         object-fit: cover;
+497:         border-radius: 16px 16px 0 0;
+498:         border-bottom: 1px solid var(--glass-border);
+499:         background: #111;
+500:     }
+501: 
+502:     .result-modal-body {
+503:         padding: 1.5rem;
+504:     }
+505: 
+506:     .result-modal-title {
+507:         font-size: 1.6rem;
+508:         font-weight: 800;
+509:         margin-bottom: 0.3rem;
+510:     }
+511: 
+512:     .result-modal-grid {
+513:         display: grid;
+514:         grid-template-columns: 1fr 1fr;
+515:         gap: 0.6rem;
+516:         margin: 1rem 0;
+517:         font-size: 0.85rem;
+518:     }
+519: 
+520:     .result-modal-grid div {
+521:         background: rgba(255,255,255,0.04);
+522:         border-radius: 6px;
+523:         padding: 0.5rem 0.7rem;
+524:         color: var(--text-secondary);
+525:     }
+526: 
+527:     .result-modal-grid strong {
+528:         display: block;
+529:         color: var(--accent-color);
+530:         font-size: 0.75rem;
+531:         margin-bottom: 0.2rem;
+532:     }
+533: 
+534:     .result-modal-desc {
+535:         font-size: 0.9rem;
+536:         color: var(--text-secondary);
+537:         line-height: 1.6;
+538:         margin-top: 1rem;
+539:         padding-top: 1rem;
+540:         border-top: 1px solid var(--glass-border);
+541:     }
+542: 
+543:     .modal-close-btn {
+544:         display: block;
+545:         margin: 1rem auto 0;
+546:         background: rgba(255,255,255,0.06);
+547:         border: 1px solid var(--glass-border);
+548:         color: #fff;
+549:         padding: 0.6rem 2rem;
+550:         border-radius: 8px;
+551:         cursor: pointer;
+552:         font-family: inherit;
+553:         font-size: 0.9rem;
+554:         transition: background 0.2s;
+555:     }
+556:     .modal-close-btn:hover { background: rgba(255,255,255,0.12); }
+557: </style>
+558: 
+559: <!-- ── Modal overlay for expanded result ────────────────── -->
+560: <div class="result-modal-overlay" id="resultModalOverlay">
+561:     <div class="result-modal" id="resultModal">
+562:         <img src="" alt="" class="result-modal-img" id="modalImg">
+563:         <div class="result-modal-body">
+564:             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
+565:                 <div>
+566:                     <div class="result-modal-title" id="modalName"></div>
+567:                     <div class="result-type" id="modalType"></div>
+568:                 </div>
+569:                 <div class="result-badge" id="modalBadge"></div>
+570:             </div>
+571:             <div class="result-modal-grid" id="modalGrid"></div>
+572:             <div class="result-modal-desc" id="modalDesc"></div>
+573:             <button class="modal-close-btn" id="modalCloseBtn">Close</button>
+574:         </div>
+575:     </div>
+576: </div>
+577: 
+578: <script>
+579: (function () {
+580:     const input      = document.getElementById('nameSearchInput');
+581:     const clearBtn   = document.getElementById('searchClearBtn');
+582:     const panel      = document.getElementById('searchResults');
+583:     const overlay    = document.getElementById('resultModalOverlay');
+584:     const modalClose = document.getElementById('modalCloseBtn');
+585: 
+586:     let debounceTimer = null;
+587: 
+588:     // ── Debounced search ──────────────────────────────────────
+589:     input.addEventListener('input', () => {
+590:         const val = input.value.trim();
+591:         clearBtn.style.display = val ? 'block' : 'none';
+592: 
+593:         clearTimeout(debounceTimer);
+594:         if (val.length < 2) {
+595:             panel.style.display = 'none';
+596:             panel.innerHTML = '';
+597:             return;
+598:         }
+599:         debounceTimer = setTimeout(() => doSearch(val), 280);
+600:     });
+601: 
+602:     // ── Clear button ──────────────────────────────────────────
+603:     clearBtn.addEventListener('click', () => {
+604:         input.value = '';
+605:         clearBtn.style.display = 'none';
+606:         panel.style.display = 'none';
+607:         panel.innerHTML = '';
+608:         input.focus();
+609:     });
+610: 
+611:     // ── Close panel when clicking outside ────────────────────
+612:     document.addEventListener('click', (e) => {
+613:         if (!e.target.closest('.search-section')) {
+614:             panel.style.display = 'none';
+615:         }
+616:     });
+617:     input.addEventListener('focus', () => {
+618:         if (panel.innerHTML.trim()) panel.style.display = 'block';
+619:     });
+620: 
+621:     // ── Fetch from /search endpoint ───────────────────────────
+622:     async function doSearch(query) {
+623:         panel.style.display = 'block';
+624:         panel.innerHTML = '<div class="search-spinner">Searching…</div>';
+625: 
+626:         try {
+627:             const res  = await fetch(`/search?q=${encodeURIComponent(query)}`);
+628:             const data = await res.json();
+629:             renderResults(data.results, query);
+630:         } catch (err) {
+631:             panel.innerHTML = '<div class="search-no-result">Error fetching results.</div>';
+632:         }
+633:     }
+634: 
+635:     // ── Render result cards ───────────────────────────────────
+636:     function renderResults(results, query) {
+637:         if (!results || results.length === 0) {
+638:             panel.innerHTML = `<div class="search-no-result">No explosives found matching "<strong>${escHtml(query)}</strong>".</div>`;
+639:             return;
+640:         }
+641: 
+642:         panel.innerHTML = results.map(item => {
+643:             const imgSrc  = item.image_url || '';
+644:             const lvl     = item.danger_level ? `Level ${item.danger_level}` : '';
+645:             const typeStr = item.explosive_type ? item.explosive_type.toUpperCase() : 'UNKNOWN';
+646:             const meta    = [
+647:                 item.country_of_origin ? `<span><strong>Origin:</strong> ${escHtml(item.country_of_origin)}</span>` : '',
+648:                 item.weight            ? `<span><strong>Weight:</strong> ${escHtml(item.weight)}</span>`            : '',
+649:                 item.ignition_method   ? `<span><strong>Ignition:</strong> ${escHtml(item.ignition_method)}</span>` : '',
+650:             ].filter(Boolean).join('');
+651: 
+652:             return `
+653:             <div class="search-result-card" data-id="${item.id}" onclick="openModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+654:                 <img class="result-thumb" src="${escHtml(imgSrc)}" alt="${escHtml(item.name)}"
+655:                      onerror="this.style.opacity=0.3; this.src='';">
+656:                 <div class="result-body">
+657:                     <div style="display:flex; align-items:flex-start;">
+658:                         <div style="flex:1;">
+659:                             <div class="result-name">${highlightMatch(escHtml(item.name), query)}</div>
+660:                             <div class="result-type">${typeStr}</div>
+661:                         </div>
+662:                         ${lvl ? `<div class="result-badge">${lvl}</div>` : ''}
+663:                     </div>
+664:                     <div class="result-desc">${escHtml(item.description || 'No description available.')}</div>
+665:                     ${meta ? `<div class="result-meta">${meta}</div>` : ''}
+666:                 </div>
+667:             </div>`;
+668:         }).join('');
+669:     }
+670: 
+671:     // ── Highlight matched text ─────────────────────────────────
+672:     function highlightMatch(text, query) {
+673:         const re = new RegExp(`(${escRegex(query)})`, 'gi');
+674:         return text.replace(re, '<mark style="background:rgba(99,102,241,0.35);color:#fff;border-radius:2px;">$1</mark>');
+675:     }
+676: 
+677:     // ── Open detail modal ─────────────────────────────────────
+678:     window.openModal = function(item) {
+679:         document.getElementById('modalImg').src   = item.image_url || '';
+680:         document.getElementById('modalImg').alt   = item.name;
+681:         document.getElementById('modalName').textContent  = item.name;
+682:         document.getElementById('modalType').textContent  = item.explosive_type ? item.explosive_type.toUpperCase() : '';
+683:         document.getElementById('modalBadge').textContent = item.danger_level ? `Level ${item.danger_level}` : '';
+684:         document.getElementById('modalDesc').textContent  = item.description || 'No description available.';
+685: 
+686:         const specs = [
+687:             ['Country of Origin', item.country_of_origin],
+688:             ['Weight',            item.weight],
+689:             ['Ignition Method',   item.ignition_method],
+690:             ['Role / Use',        item.role],
+691:             ['Usage',             item.usage],
+692:         ].filter(([, v]) => v);
+693: 
+694:         document.getElementById('modalGrid').innerHTML = specs.map(([k, v]) =>
+695:             `<div><strong>${escHtml(k)}</strong>${escHtml(v)}</div>`
+696:         ).join('');
+697: 
+698:         overlay.classList.add('active');
+699:         panel.style.display = 'none';
+700:     };
+701: 
+702:     // ── Close modal ───────────────────────────────────────────
+703:     modalClose.addEventListener('click', closeModal);
+704:     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+705:     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+706: 
+707:     function closeModal() { overlay.classList.remove('active'); }
+708: 
+709:     // ── Helpers ───────────────────────────────────────────────
+710:     function escHtml(str) {
+711:         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+712:     }
+713:     function escRegex(str) {
+714:         return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+715:     }
+716: })();
+717: </script>
+718: {% endblock %}
+719: 
+The above content shows the entire, complete file contents of the requested file.

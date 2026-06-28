@@ -1,0 +1,38 @@
+# Research: Vanilla JS Explosives Identification PWA
+
+## Backend: FastAPI + Jinja2
+- **Framework**: FastAPI for API and serving HTML.
+- **Templating**: `Jinja2Templates` for server-side rendering (SSR). This keeps the frontend lightweight and "progressive" by ensuring it works on any browser without heavy JS bundles.
+- **Database**: `SQLAlchemy` + `pymysql` (MySQL).
+- **Image Intelligence**: `Pillow` (EXIF) and `imagehash` (Perceptual Hashing).
+
+## Frontend: Vanilla CSS & JS
+- **Responsive Design**: Mobile-first media queries.
+- **Aesthetics**: 
+    - **CSS Variables**: For a unified "Industrial" theme.
+    - **Glassmorphism**: Using `backdrop-filter: blur()`.
+    - **Vanilla JS**: For handling camera access (`navigator.mediaDevices.getUserMedia`) and async file uploads.
+- **PWA Requirements**:
+    - `manifest.json`: Web app metadata.
+    - `sw.js` (Service Worker): Basic caching strategy for offline access.
+    - `icons/`: App icons for mobile.
+
+## PWA (Progressive Web App) Structure (Non-Vite)
+- **`static/`**: Folder for `styles.css`, `app.js`, `manifest.json`, and `sw.js`.
+- **`templates/`**: Folder for Jinja2 HTML templates.
+- **Service Worker**: A script to intercept network requests and serve cached content if offline.
+
+## Database Schema (MySQL)
+Remains the same as previous plan.
+```sql
+CREATE TABLE explosives (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100),
+    description TEXT,
+    danger_level INT,
+    metadata_signature JSON,
+    image_hash VARCHAR(64),
+    image_url VARCHAR(512)
+);
+```

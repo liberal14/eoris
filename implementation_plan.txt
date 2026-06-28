@@ -1,0 +1,76 @@
+# Implementation Plan: Explosives Identification PWA (Vanilla Version)
+
+This project will deliver a Progressive Web App (PWA) using a **FastAPI** backend with **Jinja2** templates and **Vanilla JS/CSS** for the frontend. This ensures maximum compatibility and a lightweight footprint while being "progressive" for both mobile and desktop.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **No React/Vite**: The frontend will be built using standard HTML5, CSS3, and ES6 JavaScript. This avoids build steps and keeps the application very fast and "progressive" by design.
+> [!IMPORTANT]
+> **MySQL Connection**: I will create a `config.py` file. You will need to enter your MySQL username and password there for the database connection to work.
+
+## Proposed Changes
+
+---
+
+### [Component] Backend & Layout (FastAPI + Jinja2)
+
+#### [NEW] [main.py](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/main.py)
+The core FastAPI application. It will handle API routes, serve static files, and render HTML templates.
+
+#### [NEW] [database.py](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/database.py)
+SQLAlchemy setup for MySQL.
+
+#### [NEW] [templates/layout.html](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/templates/layout.html)
+Base HTML template with the PWA manifest and service worker registration. Includes a responsive navigation bar.
+
+#### [NEW] [templates/index.html](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/templates/index.html)
+The dashboard showing the list of explosives and the "Identify" button.
+
+#### [NEW] [templates/scanner.html](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/templates/scanner.html)
+A dedicated page for image capture and metadata/perceptual hash analysis.
+
+---
+
+### [Component] Frontend Assets (Vanilla JS/CSS)
+
+#### [NEW] [static/css/style.css](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/static/css/style.css)
+Custom CSS with an "Industrial/Sleek" theme. Will use CSS Variables for theme management and Grid/Flexbox for responsiveness.
+
+#### [NEW] [static/js/app.js](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/static/js/app.js)
+Main frontend logic: registration of Service Worker, handling orientation/camera events, and API calls via `fetch`.
+
+#### [NEW] [static/manifest.json](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/static/manifest.json)
+PWA manifest to allow "Install to Home Screen" on mobile and PC.
+
+#### [NEW] [static/sw.js](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/static/sw.js)
+Service Worker for caching static assets and providing offline feedback.
+
+---
+
+### [Component] Logic & Models
+
+#### [NEW] [models.py](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/models.py)
+SQLAlchemy model for `ExplosiveItem`.
+
+#### [NEW] [image_logic.py](file:///c:/Users/ELITEBOOK%20X2/Desktop/HND%20EOT/project%20code/image_logic.py)
+Uses `Pillow` and `ImageHash` to extract metadata and perceptual hashes.
+
+---
+
+## Open Questions
+
+1. **MySQL Table Creation**: Should I include a script to automatically create the database and tables if they don't exist?
+2. **Icons**: Do you have specific icons for the PWA (192x192, 512x512), or should I generate placeholders?
+
+## Verification Plan
+
+### Automated Tests
+- `pytest` for endpoint validation (CRUD and Identification).
+
+### Manual Verification
+1. Open the app on a PC Chrome browser.
+2. Verify visual aesthetics and responsiveness by resizing.
+3. Check the "Install" icon in the URL bar (PC).
+4. Use the "Scanner" to upload an image and check if metadata is processed.
+5. Deploy to a mobile browser (e.g., Chrome on Android) and check "Add to Home Screen".

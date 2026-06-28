@@ -1,0 +1,487 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="scanner-container">
+    <div class="scanner-header">
+        <h1>Material Scanner</h1>
+        <p>Upload or capture an image to identify ordnance using metadata and visual signatures.</p>
+    </div>
+
+    <div class="scanner-main">
+        <div class="card glass-card scanner-panel">
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="icon-camera">📷</div>
+                    <p>Tap to Capture or Drag Image Here</p>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                </div>
+            </div>
+            
+            <div id="preview-container" style="display: none;">
+                <img id="image-preview" src="" alt="Preview">
+                <button id="analyze-btn" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">Analyze Signature</button>
+            </div>
+        </div>
+
+        <div id="results-panel" class="card glass-card results-hidden">
+            <div id="loading-spinner" style="display: none;">
+                <div class="spinner"></div>
+                <p>Decoding Signature...</p>
+            </div>
+            
+            <div id="result-content" style="display: none;">
+                <div id="match-banner" class="match-banner">
+                    <span id="match-banner-icon"></span>
+                    <span id="match-banner-text"></span>
+                </div>
+
+                <div id="suggestions-section" style="margin-top: 1.5rem; display: none;">
+                    <h4 style="margin-bottom: 0.8rem; color: var(--text-secondary); font-size: 0.9rem;">Visual Recommendations (Closest Matches)</h4>
+                    <div id="suggestions-list" class="suggestions-list"></div>
+                </div>
+
+                <div id="details-section" style="margin-top: 1.5rem;">
+                    <div class="identity-card-premium">
+                        <div class="details-top">
+                            <img id="res-image" src="" alt="Ordnance Image" class="details-image">
+                            <div class="details-title-bar">
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <span id="res-type" class="badge"></span>
+                                    <span id="res-confidence-badge" class="badge"></span>
+                                </div>
+                                <h3 id="res-name" style="font-size: 1.5rem; margin-top: 0.3rem;"></h3>
+                            </div>
+                        </div>
+                        <div class="details-specs" id="res-specs-grid"></div>
+                        <p id="res-desc" style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 1rem;"></p>
+                    </div>
+                </div>
+                
+                <div class="metadata-dump" style="margin-top: 1.5rem;">
+                    <h4>Captured Metadata</h4>
+                    <pre id="metadata-json"></pre>
+                </div>
+                
+                <button onclick="resetScanner()" class="btn btn-outline" style="margin-top: 1.5rem; width: 100%;">Reset Scanner</button>
+            </div>
+            
+            <div id="not-found-content" style="display: none;">
+                <h2>Identification Failed</h2>
+                <p>The visual signature and metadata do not match any known records in our database.</p>
+                <div class="metadata-dump" style="margin-top: 1.5rem;">
+                    <h4>Captured Metadata</h4>
+                    <pre id="metadata-json-notfound"></pre>
+                </div>
+                <button onclick="resetScanner()" class="btn btn-outline" style="margin-top: 1.5rem; width: 100%;">Scan New Material</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .scanner-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .scanner-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .scanner-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .drop-zone {
+        height: 300px;
+        border: 2px dashed var(--glass-border);
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .drop-zone:hover {
+        border-color: var(--accent-color);
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .icon-camera {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    #image-preview {
+        width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+
+    .results-hidden {
+        min-height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--glass-border);
+        border-top: 4px solid var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .metadata-dump {
+        margin-top: 2rem;
+        font-size: 0.75rem;
+        background: #000;
+        padding: 1rem;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    pre {
+        color: #10b981;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Premium Scanner Results Style */
+    .match-banner {
+        padding: 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        border: 1px solid transparent;
+    }
+    .match-banner.success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+    .match-banner.warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .suggestions-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .suggestion-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 0.8rem;
+        display: flex;
+        gap: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        align-items: center;
+    }
+
+    .suggestion-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .suggestion-card.active {
+        background: rgba(245, 158, 11, 0.05);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.1);
+    }
+
+    .suggestion-thumb {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+        background: #111;
+        border: 1px solid var(--glass-border);
+        flex-shrink: 0;
+    }
+
+    .suggestion-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .suggestion-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #fff;
+    }
+
+    .suggestion-type {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .suggestion-score {
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: var(--accent-color);
+        margin-top: 0.2rem;
+    }
+
+    .identity-card-premium {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--glass-border);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid var(--accent-color);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .details-top {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .details-image {
+        width: 140px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        background: #111;
+        flex-shrink: 0;
+    }
+
+    .details-title-bar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .badge-confidence {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+    }
+
+    .details-specs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.6rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.85rem;
+    }
+
+    .details-specs div {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        padding: 0.5rem 0.7rem;
+        color: var(--text-secondary);
+    }
+
+    .details-specs strong {
+        display: block;
+        color: var(--accent-color);
+        font-size: 0.75rem;
+        margin-bottom: 0.2rem;
+    }
+</style>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const previewContainer = document.getElementById('preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const resultsPanel = document.getElementById('results-panel');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const resultContent = document.getElementById('result-content');
+    const notFoundContent = document.getElementById('not-found-content');
+
+    let selectedFile = null;
+    let activeSuggestions = [];
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+    };
+
+    function handleFile(file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            dropZone.style.display = 'none';
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    analyzeBtn.onclick = async () => {
+        if (!selectedFile) return;
+
+        // Show loading
+        loadingSpinner.style.display = 'block';
+        resultContent.style.display = 'none';
+        notFoundContent.style.display = 'none';
+        analyzeBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const response = await fetch('/identify', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            loadingSpinner.style.display = 'none';
+            
+            if (data.status === 'success' || data.status === 'uncertain') {
+                activeSuggestions = data.suggestions || [];
+                const banner = document.getElementById('match-banner');
+                const bannerIcon = document.getElementById('match-banner-icon');
+                const bannerText = document.getElementById('match-banner-text');
+
+                if (data.status === 'success') {
+                    banner.className = 'match-banner success';
+                    bannerIcon.innerText = '✓';
+                    bannerText.innerText = `Confirmed Match (${data.match.confidence}% Similarity)`;
+                } else {
+                    banner.className = 'match-banner warning';
+                    bannerIcon.innerText = '⚠';
+                    bannerText.innerText = 'Uncertain Pattern - Multiple Recommendations Found';
+                }
+
+                // Render suggestions list
+                const suggestionsSection = document.getElementById('suggestions-section');
+                const suggestionsList = document.getElementById('suggestions-list');
+                
+                if (activeSuggestions.length > 1 || (data.status === 'uncertain' && activeSuggestions.length > 0)) {
+                    suggestionsSection.style.display = 'block';
+                    suggestionsList.innerHTML = activeSuggestions.map((item, idx) => `
+                        <div class="suggestion-card ${idx === 0 ? 'active' : ''}" data-index="${idx}" onclick="selectSuggestion(${idx})">
+                            <img class="suggestion-thumb" src="${escHtml(item.image_url)}" alt="${escHtml(item.name)}" onerror="this.src='';">
+                            <div class="suggestion-info">
+                                <div class="suggestion-name">${escHtml(item.name)}</div>
+                                <div class="suggestion-type">${escHtml(item.type ? item.type.toUpperCase() : 'UNKNOWN')}</div>
+                                <div class="suggestion-score">${item.confidence}% Match</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    suggestionsSection.style.display = 'none';
+                }
+
+                // Show details for default item (top recommendation)
+                const defaultItem = data.status === 'success' ? data.match : activeSuggestions[0];
+                if (defaultItem) {
+                    showDetailItem(defaultItem);
+                }
+
+                document.getElementById('metadata-json').innerText = JSON.stringify(data.upload_metadata, null, 2);
+                resultContent.style.display = 'block';
+            } else {
+                document.getElementById('metadata-json-notfound').innerText = JSON.stringify(data.upload_metadata, null, 2);
+                notFoundContent.style.display = 'block';
+            }
+        } catch (err) {
+            alert('Analysis Error: ' + err.message);
+            loadingSpinner.style.display = 'none';
+        } finally {
+            analyzeBtn.disabled = false;
+        }
+    };
+
+    window.selectSuggestion = function(index) {
+        const item = activeSuggestions[index];
+        if (!item) return;
+
+        // Update active class on cards
+        document.querySelectorAll('.suggestion-card').forEach((card, idx) => {
+            if (idx === index) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        showDetailItem(item);
+    };
+
+    function showDetailItem(item) {
+        document.getElementById('res-image').src = item.image_url || '';
+        document.getElementById('res-name').innerText = item.name;
+        
+        const typeBadge = document.getElementById('res-type');
+        typeBadge.innerText = item.type ? item.type.toUpperCase() : 'UNKNOWN';
+        typeBadge.className = 'badge badge-danger';
+
+        const confBadge = document.getElementById('res-confidence-badge');
+        confBadge.innerText = `${item.confidence}% Similarity`;
+        confBadge.className = 'badge badge-confidence';
+
+        document.getElementById('res-desc').innerText = item.description || 'No description available.';
+
+        const specs = [
+            ['Country of Origin', item.country_of_origin],
+            ['Weight',            item.weight],
+            ['Ignition Method',   item.ignition_method],
+            ['Role / Use',        item.role],
+            ['Danger Level',      item.danger_level + '/5'],
+        ].filter(([, v]) => v && String(v).toLowerCase() !== 'none' && String(v).trim() !== '');
+
+        document.getElementById('res-specs-grid').innerHTML = specs.map(([k, v]) =>
+            `<div><strong>${escHtml(k)}</strong>${escHtml(v)}</div>`
+        ).join('');
+    }
+
+    function resetScanner() {
+        selectedFile = null;
+        activeSuggestions = [];
+        fileInput.value = '';
+        dropZone.style.display = 'flex';
+        previewContainer.style.display = 'none';
+        resultContent.style.display = 'none';
+        notFoundContent.style.display = 'none';
+    }
+
+    function escHtml(str) {
+        return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+{% endblock %}

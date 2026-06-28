@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block head %}
+<style>
+  .dashboard-container { padding: 2rem; }
+  .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .item-title { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+  .item-meta { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dashboard-container">
+  <form action="/search" method="GET" class="search-form" style="margin-bottom:1.5rem; display:flex; gap:0.5rem;">
+    <input type="text" name="q" placeholder="Search explosives..." required class="form-control" style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg-mid); color:var(--text);">
+    <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem; background:var(--accent); color:var(--bg-deep); border:none; border-radius:6px;">Search</button>
+  </form>
+  <div id="search-results" class="search-results" style="margin-top:1rem;"></div>
+  <h2 class="auth-title">Dashboard</h2>
+
+  <div id="dashboard-items">
+    {% if items %}
+      {% for item in items %}
+        <div class="item-card">
+          <div class="item-title">{{ item.name }} ({{ item.explosive_type }})</div>
+          <div class="item-meta">
+            <strong>Danger Level:</strong> {{ item.danger_level }} |
+            <strong>Origin:</strong> {{ item.country_of_origin or "Unknown" }} |
+            <strong>Weight:</strong> {{ item.weight or "N/A" }}
+          </div>
+          <p>{{ item.description }}</p>
+          {% if item.image_url %}
+            <img src="{{ item.image_url }}" alt="{{ item.name }}" style="max-width:200px; border-radius:8px; margin-top:0.5rem;"/>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No explosive records found.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.search-form');
+    const input = form.querySelector('input[name="q"]');
+    const resultsDiv = document.getElementById('search-results');
+    const dashboardItems = document.getElementById('dashboard-items');
+    let timeout = null;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+    });
+
+    input.addEventListener('input', function() {
+      clearTimeout(timeout);
+      const query = this.value.trim();
+
+      if (query.length < 2) {
+        resultsDiv.innerHTML = '';
+        dashboardItems.style.display = 'block';
+        return;
+      }
+
+      timeout = setTimeout(() => {
+        fetch(`/search?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            const results = data.results;
+            dashboardItems.style.display = 'none';
+
+            if (!results.length) {
+              resultsDiv.innerHTML = '<p>No matches found.</p>';
+              return;
+            }
+
+            let html = '';
+            results.forEach(item => {
+              html += `
+                <div class="item-card">
+                  <div class="item-title">${item.name} (${item.explosive_type})</div>
+                  <div class="item-meta">
+                    <strong>Danger Level:</strong> ${item.danger_level} |
+                    <strong>Origin:</strong> ${item.country_of_origin || "Unknown"} |
+                    <strong>Weight:</strong> ${item.weight || "N/A"}
+                  </div>
+                  <p>${item.description}</p>
+                  ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" style="max-width:200px; border-radius:8px; margin-top:0.5rem;"/>` : ''}
+                </div>
+              `;
+            });
+            resultsDiv.innerHTML = html;
+          })
+          .catch(err => {
+            console.error(err);
+            resultsDiv.innerHTML = '<p>Error fetching results.</p>';
+          });
+      }, 300);
+    });
+  });
+</script>
+{% endblock %}
