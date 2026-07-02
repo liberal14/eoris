@@ -101,6 +101,11 @@ async def get_current_user_required(request: Request, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return user
 
+# Ensure directories exist before mounting
+os.makedirs("uploads", exist_ok=True)
+os.makedirs("extracted", exist_ok=True)
+os.makedirs("images", exist_ok=True)
+
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
@@ -111,10 +116,6 @@ if os.path.isdir("images"):
     app.mount("/images", StaticFiles(directory="images"), name="images")
 
 templates = Jinja2Templates(directory="templates")
-
-# Ensure upload directory exists
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("images", exist_ok=True)
 
 # Authentication routes
 @app.get("/register", response_class=HTMLResponse)
