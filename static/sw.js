@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aegis-v1';
+const CACHE_NAME = 'eoris-v1';
 const ASSETS = [
     '/',
     '/scanner',

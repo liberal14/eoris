@@ -4,7 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EORIS — Explosive Ordnance Recognition & Identification System</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#f59e0b">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js')
+        .then(r => console.log('SW registered', r))
+        .catch(e => console.log('SW failed', e));
+    }
+  </script>
   <style>
     :root {
       --bg-deep:  #060b14;
@@ -35,40 +45,40 @@
     @keyframes fadeLeft { from { opacity:0; transform:translateX(-24px); } to { opacity:1; transform:translateX(0); } }
     .hero-title { font-family: 'Rajdhani', sans-serif; font-size: clamp(2.8rem, 5vw, 4.2rem); font-weight: 700; line-height: 1.05; color: #e8f0fe; margin-bottom: 10px; letter-spacing: 1px; }
     .hero-title .accent { color: var(--accent); }
-    .hero-title .dim { color: var(--muted); font-weight: 400; }
-    .hero-acronym { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--muted); letter-spacing: 3px; margin-bottom: 28px; }
-    .hero-desc { font-size: 0.95rem; color: var(--muted); line-height: 1.8; max-width: 480px; margin-bottom: 44px; }
+    .hero-title .dim { color: #7ee8fa; font-weight: 500; text-shadow: 0 0 18px rgba(126,232,250,0.35); }
+    .hero-acronym { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: #f59e0b; letter-spacing: 3px; margin-bottom: 28px; text-shadow: 0 0 10px rgba(245,158,11,0.45); }
+    .hero-desc { font-size: 0.95rem; color: #c8d8f0; line-height: 1.8; max-width: 480px; margin-bottom: 44px; }
     .features { display: flex; flex-direction: column; gap: 14px; margin-bottom: 50px; }
     .feature { display: flex; align-items: flex-start; gap: 14px; }
     .feature-icon { width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; border: 1px solid var(--border); background: rgba(100,255,218,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
-    .feature-text h4 { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-    .feature-text p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .feature-text h4 { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+    .feature-text p { font-size: 0.78rem; color: #90caf9; line-height: 1.5; }
     .stats-strip { display: flex; gap: 32px; padding-top: 32px; border-top: 1px solid var(--border); }
     .stat { display: flex; flex-direction: column; gap: 3px; }
     .stat-num { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--accent); }
-    .stat-lbl { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 1.5px; }
+    .stat-lbl { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: #a3e635; letter-spacing: 1.5px; text-shadow: 0 0 8px rgba(163,230,53,0.4); }
     .right { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 60px 40px; background: rgba(6,11,20,0.6); backdrop-filter: blur(16px); animation: fadeRight 0.8s 0.15s ease both; }
     @keyframes fadeRight { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
     .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
     .logo-box { width: 48px; height: 48px; border-radius: 8px; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono', monospace; font-size: 1rem; color: var(--accent); box-shadow: 0 0 20px rgba(100,255,218,0.25); animation: glow 3s ease-in-out infinite; }
     @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(100,255,218,0.25)} 50%{box-shadow:0 0 36px rgba(100,255,218,0.5)} }
     .logo-info h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--accent); letter-spacing: 3px; }
-    .logo-info p { font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: var(--muted); letter-spacing: 1.5px; }
+    .logo-info p { font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #f59e0b; letter-spacing: 1.5px; }
     .login-card { width: 100%; max-width: 340px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 36px 32px; }
     .login-card h3 { font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text); letter-spacing: 1px; margin-bottom: 4px; }
-    .login-card p { font-size: 0.75rem; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+    .login-card p { font-size: 0.75rem; color: #94d2f7; margin-bottom: 28px; line-height: 1.5; }
     .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; }
+    .form-group label { display: block; font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; color: #64ffda; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; }
     .form-group input { width: 100%; background: rgba(100,255,218,0.03); border: 1px solid var(--border); border-radius: 7px; padding: 11px 14px; color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
     .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(100,255,218,0.08); }
     .form-group input::placeholder { color: var(--muted); }
     .login-btn { width: 100%; padding: 13px; background: var(--accent); color: var(--bg-deep); border: none; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
     .login-btn:hover { background: #4de8c4; box-shadow: 0 0 28px rgba(100,255,218,0.35); }
-    .login-footer { text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); line-height: 1.8; }
+    .login-footer { text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: #b0c4de; line-height: 1.8; }
     .login-footer span { color: var(--accent); }
     .class-banner { margin-top: 28px; border: 1px solid rgba(255,77,77,0.25); border-radius: 6px; padding: 10px 16px; background: rgba(255,77,77,0.05); display: flex; align-items: center; gap: 10px; width: 100%; max-width: 340px; }
     .class-banner .warn-icon { font-size: 0.9rem; }
-    .class-banner p { font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: rgba(255,77,77,0.8); letter-spacing: 1px; line-height: 1.6; }
+    .class-banner p { font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #ff8a80; letter-spacing: 1px; line-height: 1.6; text-shadow: 0 0 8px rgba(255,77,77,0.5); }
     @media (max-width: 900px) { .page { grid-template-columns: 1fr; } .left { padding: 50px 28px 40px; border-right: none; border-bottom: 1px solid var(--border); } .right { padding: 40px 20px 50px; } }
   </style>
 </head>

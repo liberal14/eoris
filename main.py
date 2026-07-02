@@ -170,6 +170,12 @@ async def login(request: Request, username: str = Form(...), password: str = For
         )
     
     if not getattr(user, 'is_verified', True):
+        otp_code = ''.join(random.choices(string.digits, k=6))
+        expire_time = datetime.utcnow() + timedelta(minutes=10)
+        user.otp = otp_code
+        user.otp_expires_at = expire_time
+        db.commit()
+        send_otp_email(user.email, otp_code)
         return RedirectResponse(url=f"/verify-otp?username={username}", status_code=303)
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

@@ -1,10 +1,10 @@
 {
-  "name": "Aegis Explosives Identifier",
-  "short_name": "Aegis",
-  "description": "Industrial intelligence for explosive material identification.",
+  "name": "EORIS - Explosive Ordnance Recognition & Identification System",
+  "short_name": "EORIS",
+  "description": "A structured digital database for recognising, classifying, and retrieving explosive ordnance records.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#060b14",
   "theme_color": "#f59e0b",
   "icons": [
     {
