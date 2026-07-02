@@ -92,6 +92,34 @@
     .auth-footer a:hover {
         color: #fbbf24;
     }
+
+    .password-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.3s ease;
+    }
+
+    .password-toggle:hover {
+        color: var(--text-primary);
+    }
+
+    .form-control-password {
+        padding-right: 50px !important;
+    }
 </style>
 {% endblock %}
 
@@ -114,11 +142,27 @@
 
         <div class="form-group">
             <label class="form-label" for="password">Password</label>
-            <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password">
+            <div class="password-container">
+                <input class="form-control form-control-password" type="password" id="password" name="password" required autocomplete="current-password">
+                <button type="button" class="password-toggle" id="togglePassword">Show</button>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-primary auth-btn">Sign In</button>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const togglePassword = document.querySelector('#togglePassword');
+            const passwordInput = document.querySelector('#password');
+
+            togglePassword.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                togglePassword.textContent = type === 'password' ? 'Show' : 'Hide';
+            });
+        });
+    </script>
 
     <div class="auth-footer">
         Don't have an account? <a href="/register">Register here</a>
