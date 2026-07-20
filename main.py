@@ -226,6 +226,22 @@ async def logout():
     response.delete_cookie("access_token")
     return response
 
+def get_technical_completeness_score(item: ExplosiveItem) -> int:
+    score = 0
+    # List of technical attributes we want to check
+    tech_fields = [
+        item.country_of_origin,
+        item.weight,
+        item.usage,
+        item.ignition_method,
+        item.role,
+        item.description
+    ]
+    for field in tech_fields:
+        if field and str(field).strip() and str(field).strip().lower() not in ("none", "unknown"):
+            score += 1
+    return score
+
 # Main App Routes
 @app.get("/", response_class=HTMLResponse)
 async def read_dashboard(request: Request, db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
@@ -235,13 +251,17 @@ async def read_dashboard(request: Request, db: Session = Depends(get_db), user: 
 
     if user:
         # Authenticated users see all explosives on the dashboard
-        items = db.query(ExplosiveItem).order_by(ExplosiveItem.created_at.desc()).all()
+        print(f"DEBUG HOST: {request.client.host}")
+        items = db.query(ExplosiveItem).all()
+        # Sort items: primarily by completeness score (descending), secondarily by creation date (descending)
+        items.sort(key=lambda x: (get_technical_completeness_score(x), x.created_at or datetime.min), reverse=True)
         return templates.TemplateResponse(
             request=request,
             name="dashboard.html",
             context={
                 "items": items,
                 "user": user,
+                "is_local": (request.client.host in ['127.0.0.1', '::1', 'localhost'] and not request.headers.get("X-Forwarded-For")),
                 "total_records": total_records,
                 "total_countries": total_countries,
                 "total_categories": total_categories
@@ -283,8 +303,14 @@ async def add_explosive(
     role: str = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user_required)
+    user: User = Depends(get_current_user_required),
+    request: Request = None
 ):
+    if request:
+        is_local = request.client.host in ['127.0.0.1', '::1', 'localhost'] and not request.headers.get("X-Forwarded-For")
+        if not is_local:
+            raise HTTPException(status_code=403, detail="Action only permitted from localhost.")
+
     # Save file
     file_ext = file.filename.split(".")[-1]
     filename = f"{uuid.uuid4()}.{file_ext}"
@@ -319,6 +345,64 @@ async def add_explosive(
     db.refresh(new_item)
     
     return RedirectResponse(url="/", status_code=303)
+
+@app.post("/explosives/edit/{item_id}")
+async def edit_explosive(
+    item_id: int,
+    name: str = Form(...),
+    explosive_type: str = Form(...),
+    description: str = Form(...),
+    danger_level: int = Form(...),
+    country_of_origin: str = Form(None),
+    weight: str = Form(None),
+    usage: str = Form(None),
+    ignition_method: str = Form(None),
+    role: str = Form(None),
+    file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user_required),
+    request: Request = None
+):
+    if request:
+        is_local = request.client.host in ['127.0.0.1', '::1', 'localhost'] and not request.headers.get("X-Forwarded-For")
+        if not is_local:
+            raise HTTPException(status_code=403, detail="Action only permitted from localhost.")
+
+    item = db.query(ExplosiveItem).filter(ExplosiveItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    item.name = name
+    item.explosive_type = explosive_type
+    item.description = description
+    item.danger_level = danger_level
+    item.country_of_origin = country_of_origin
+    item.weight = weight
+    item.usage = usage
+    item.ignition_method = ignition_method
+    item.role = role
+
+    # Save new file if provided
+    if file and file.filename:
+        file_ext = file.filename.split(".")[-1]
+        filename = f"{uuid.uuid4()}.{file_ext}"
+        file_path = os.path.join("uploads", filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        metadata = get_image_metadata(file_path)
+        phash = get_image_phash(file_path)
+        fvec  = get_feature_vector(file_path)
+        
+        item.metadata_signature = metadata
+        item.image_hash = phash
+        item.feature_vector = fvec
+        item.image_url = f"/uploads/{filename}"
+
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
+
 
 @app.post("/identify")
 async def identify_image(file: UploadFile = File(...), db: Session = Depends(get_db), user: Optional[User] = Depends(get_current_user_optional)):
@@ -433,7 +517,7 @@ async def identify_image(file: UploadFile = File(...), db: Session = Depends(get
         }
 
 @app.get("/search")
-async def search_by_name(q: str = "", db: Session = Depends(get_db)):
+async def search_by_name(request: Request, q: str = "", db: Session = Depends(get_db)):
     """Search explosives by name (case-insensitive partial match)."""
     if not q or len(q.strip()) < 2:
         return {"results": []}
@@ -441,7 +525,10 @@ async def search_by_name(q: str = "", db: Session = Depends(get_db)):
     query = q.strip()
     matches = db.query(ExplosiveItem).filter(
         ExplosiveItem.name.ilike(f"%{query}%")
-    ).order_by(ExplosiveItem.name).limit(10).all()
+    ).all()
+    
+    matches.sort(key=lambda x: (get_technical_completeness_score(x), x.created_at or datetime.min), reverse=True)
+    matches = matches[:15]
 
     results = []
     for item in matches:
@@ -459,7 +546,10 @@ async def search_by_name(q: str = "", db: Session = Depends(get_db)):
             "role": item.role,
         })
 
-    return {"results": results}
+    return {
+        "results": results, 
+        "is_local": (request.client.host in ['127.0.0.1', '::1', 'localhost'] and not request.headers.get("X-Forwarded-For"))
+    }
 
 
 if __name__ == "__main__":

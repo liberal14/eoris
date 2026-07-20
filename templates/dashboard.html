@@ -2,34 +2,230 @@
 {% block head %}
 <style>
   .dashboard-container { padding: 2rem; }
-  .item-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
-  .item-title { font-size: 1.4rem; font-weight: 700; color: var(--text); }
-  .item-meta { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+  
+  #dashboard-items, #search-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.8rem;
+    margin-top: 1rem;
+  }
+  @media (max-width: 768px) {
+    #dashboard-items, #search-results {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .item-card { 
+    background: var(--surface-color); 
+    border: 1px solid var(--glass-border); 
+    border-radius: 12px; 
+    padding: 0.8rem; 
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .item-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(245, 158, 11, 0.05);
+  }
+  .item-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .item-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; }
+  
+  .edit-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+    padding: 0;
+  }
+  .edit-btn:hover {
+    opacity: 0.8;
+  }
+  
+  .card-hero-img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    margin-bottom: 0.5rem;
+    background: #111;
+  }
+  .reveal-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    padding: 0.5rem;
+    margin-top: 1rem;
+    border: 1px dashed var(--glass-border);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+  .reveal-btn:hover {
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.05);
+  }
+  .technical-data {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Modal Styles */
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: var(--surface-color);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.15);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.5rem;
+  }
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-color);
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  .modal-close:hover {
+    color: var(--text-primary);
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 600px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .form-group-full {
+    grid-column: span 2;
+  }
+  @media (max-width: 600px) {
+    .form-group-full {
+      grid-column: span 1;
+    }
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent-color);
+    outline: none;
+  }
 </style>
 {% endblock %}
 {% block content %}
 <div class="dashboard-container">
-  <form action="/search" method="GET" class="search-form" style="margin-bottom:1.5rem; display:flex; gap:0.5rem;">
-    <input type="text" name="q" placeholder="Search explosives..." required class="form-control" style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg-mid); color:var(--text);">
-    <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem; background:var(--accent); color:var(--bg-deep); border:none; border-radius:6px;">Search</button>
-  </form>
-  <div id="search-results" class="search-results" style="margin-top:1rem;"></div>
-  <h2 class="auth-title">Dashboard</h2>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
+    <form action="/search" method="GET" class="search-form" style="flex:1; display:flex; gap:0.5rem; min-width:300px;">
+      <input type="text" name="q" placeholder="Search explosives..." required class="form-control" style="flex:1; padding:0.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg-mid); color:var(--text);">
+      <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem; background:var(--accent); color:var(--bg-deep); border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Search</button>
+    </form>
+    {% if is_local %}
+    <button onclick="openAddModal()" class="btn btn-primary" style="padding:0.5rem 1rem; background:var(--accent-color); color:var(--bg-color); border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ Add New Ordnance</button>
+    {% endif %}
+  </div>
+  
+  <div id="search-results" class="search-results" style="display:none; margin-top:1rem;"></div>
+  <h2 class="auth-title" style="margin-bottom: 1.5rem;">Dashboard</h2>
 
   <div id="dashboard-items">
     {% if items %}
       {% for item in items %}
         <div class="item-card">
-          <div class="item-title">{{ item.name }} ({{ item.explosive_type }})</div>
-          <div class="item-meta">
-            <strong>Danger Level:</strong> {{ item.danger_level }} |
-            <strong>Origin:</strong> {{ item.country_of_origin or "Unknown" }} |
-            <strong>Weight:</strong> {{ item.weight or "N/A" }}
-          </div>
-          <p>{{ item.description }}</p>
           {% if item.image_url %}
-            <img src="{{ item.image_url }}" alt="{{ item.name }}" style="max-width:200px; border-radius:8px; margin-top:0.5rem;"/>
+            <img src="{{ item.image_url }}" alt="{{ item.name }}" class="card-hero-img" onerror="this.style.display='none';" />
+          {% else %}
+            <div class="card-hero-img" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary);">No Image Available</div>
           {% endif %}
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div class="item-title">{{ item.name }} ({{ item.explosive_type }})</div>
+            {% if is_local %}
+            <button class="edit-btn" 
+                    onclick="openEditModal(this)"
+                    data-id="{{ item.id }}"
+                    data-name="{{ item.name }}"
+                    data-type="{{ item.explosive_type }}"
+                    data-desc="{{ item.description }}"
+                    data-danger="{{ item.danger_level }}"
+                    data-origin="{{ item.country_of_origin or '' }}"
+                    data-weight="{{ item.weight or '' }}"
+                    data-ignition="{{ item.ignition_method or '' }}"
+                    data-role="{{ item.role or '' }}"
+                    data-usage="{{ item.usage or '' }}"
+                    title="Edit Item">
+              ✏️
+            </button>
+            {% endif %}
+          </div>
+          
+          <button class="reveal-btn" onclick="toggleDetails(this)">View Technical Data ▾</button>
+          
+          <div class="technical-data">
+            <div class="item-meta">
+              <strong>Danger Level:</strong> {{ item.danger_level }} |
+              <strong>Origin:</strong> {{ item.country_of_origin or "Unknown" }} |
+              <strong>Weight:</strong> {{ item.weight or "N/A" }}
+            </div>
+            <p style="margin-top:0.5rem; color:var(--text-secondary);">{{ item.description }}</p>
+          </div>
         </div>
       {% endfor %}
     {% else %}
@@ -38,7 +234,185 @@
   </div>
 </div>
 
+{% if is_local %}
+<!-- Add Ordnance Modal -->
+<div id="add-modal" class="modal-backdrop">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Add New Ordnance</div>
+      <button onclick="closeAddModal()" class="modal-close">&times;</button>
+    </div>
+    <form action="/explosives/add" method="POST" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Ordnance Name *</label>
+          <input type="text" name="name" required placeholder="e.g. MK 82 Bomb">
+        </div>
+        <div class="form-group">
+          <label>Explosive Type *</label>
+          <select name="explosive_type" required>
+            <option value="bomb">Bomb</option>
+            <option value="mine">Mine</option>
+            <option value="missile">Missile</option>
+            <option value="rocket">Rocket</option>
+            <option value="grenade">Grenade</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Danger Level (1-5) *</label>
+          <select name="danger_level" required>
+            <option value="1">1 - Minimal</option>
+            <option value="2">2 - Low</option>
+            <option value="3">3 - Medium</option>
+            <option value="4">4 - High</option>
+            <option value="5">5 - Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Country of Origin</label>
+          <input type="text" name="country_of_origin" placeholder="e.g. USA">
+        </div>
+        <div class="form-group">
+          <label>Gross Weight</label>
+          <input type="text" name="weight" placeholder="e.g. 227 kg">
+        </div>
+        <div class="form-group">
+          <label>Ignition Method / Fuze</label>
+          <input type="text" name="ignition_method" placeholder="e.g. Mechanical Impact">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <input type="text" name="role" placeholder="e.g. Anti-infrastructure">
+        </div>
+        <div class="form-group">
+          <label>Ordnance Image *</label>
+          <input type="file" name="file" required accept="image/*">
+        </div>
+        <div class="form-group form-group-full">
+          <label>Description *</label>
+          <textarea name="description" required rows="3" placeholder="General description and technical characteristics..."></textarea>
+        </div>
+        <div class="form-group form-group-full">
+          <label>Usage / EOD Rendering-Safe Procedures</label>
+          <textarea name="usage" rows="3" placeholder="Render safe procedures, storage details..."></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:0.8rem; background:var(--accent-color); color:var(--bg-color); border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem;">Save Item to Database</button>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Ordnance Modal -->
+<div id="edit-modal" class="modal-backdrop">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Edit Ordnance</div>
+      <button onclick="closeEditModal()" class="modal-close">&times;</button>
+    </div>
+    <form id="edit-form" action="/explosives/edit/" method="POST" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Ordnance Name *</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Explosive Type *</label>
+          <select name="explosive_type" required>
+            <option value="bomb">Bomb</option>
+            <option value="mine">Mine</option>
+            <option value="missile">Missile</option>
+            <option value="rocket">Rocket</option>
+            <option value="grenade">Grenade</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Danger Level (1-5) *</label>
+          <select name="danger_level" required>
+            <option value="1">1 - Minimal</option>
+            <option value="2">2 - Low</option>
+            <option value="3">3 - Medium</option>
+            <option value="4">4 - High</option>
+            <option value="5">5 - Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Country of Origin</label>
+          <input type="text" name="country_of_origin">
+        </div>
+        <div class="form-group">
+          <label>Gross Weight</label>
+          <input type="text" name="weight">
+        </div>
+        <div class="form-group">
+          <label>Ignition Method / Fuze</label>
+          <input type="text" name="ignition_method">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <input type="text" name="role">
+        </div>
+        <div class="form-group">
+          <label>Update Image (Optional)</label>
+          <input type="file" name="file" accept="image/*">
+        </div>
+        <div class="form-group form-group-full">
+          <label>Description *</label>
+          <textarea name="description" required rows="3"></textarea>
+        </div>
+        <div class="form-group form-group-full">
+          <label>Usage / EOD Rendering-Safe Procedures</label>
+          <textarea name="usage" rows="3"></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; padding:0.8rem; background:var(--accent-color); color:var(--bg-color); border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem;">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
 <script>
+  function openAddModal() {
+    document.getElementById('add-modal').style.display = 'flex';
+  }
+  function closeAddModal() {
+    document.getElementById('add-modal').style.display = 'none';
+  }
+
+  function openEditModal(btn) {
+    const id = btn.getAttribute('data-id');
+    const form = document.getElementById('edit-form');
+    form.action = `/explosives/edit/${id}`;
+    
+    form.querySelector('[name="name"]').value = btn.getAttribute('data-name');
+    form.querySelector('[name="explosive_type"]').value = btn.getAttribute('data-type').toLowerCase();
+    form.querySelector('[name="danger_level"]').value = btn.getAttribute('data-danger');
+    form.querySelector('[name="description"]').value = btn.getAttribute('data-desc');
+    form.querySelector('[name="country_of_origin"]').value = btn.getAttribute('data-origin');
+    form.querySelector('[name="weight"]').value = btn.getAttribute('data-weight');
+    form.querySelector('[name="ignition_method"]').value = btn.getAttribute('data-ignition');
+    form.querySelector('[name="role"]').value = btn.getAttribute('data-role');
+    form.querySelector('[name="usage"]').value = btn.getAttribute('data-usage');
+    
+    document.getElementById('edit-modal').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+  }
+
+  function toggleDetails(btn) {
+    const dataDiv = btn.nextElementSibling;
+    if (dataDiv.style.display === 'block') {
+      dataDiv.style.display = 'none';
+      btn.innerText = 'View Technical Data ▾';
+    } else {
+      dataDiv.style.display = 'block';
+      btn.innerText = 'Hide Technical Data ▴';
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('.search-form');
     const input = form.querySelector('input[name="q"]');
@@ -56,7 +430,8 @@
 
       if (query.length < 2) {
         resultsDiv.innerHTML = '';
-        dashboardItems.style.display = 'block';
+        resultsDiv.style.display = 'none';
+        dashboardItems.style.display = '';
         return;
       }
 
@@ -66,6 +441,7 @@
           .then(data => {
             const results = data.results;
             dashboardItems.style.display = 'none';
+            resultsDiv.style.display = '';
 
             if (!results.length) {
               resultsDiv.innerHTML = '<p>No matches found.</p>';
@@ -74,16 +450,44 @@
 
             let html = '';
             results.forEach(item => {
+              const imageHtml = item.image_url 
+                ? `<img src="${item.image_url}" alt="${item.name}" class="card-hero-img" onerror="this.style.display='none';"/>` 
+                : `<div class="card-hero-img" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary);">No Image Available</div>`;
+
               html += `
                 <div class="item-card">
-                  <div class="item-title">${item.name} (${item.explosive_type})</div>
-                  <div class="item-meta">
-                    <strong>Danger Level:</strong> ${item.danger_level} |
-                    <strong>Origin:</strong> ${item.country_of_origin || "Unknown"} |
-                    <strong>Weight:</strong> ${item.weight || "N/A"}
+                  ${imageHtml}
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div class="item-title">${item.name} (${item.explosive_type})</div>
+                    ${data.is_local ? `
+                    <button class="edit-btn" 
+                            onclick="openEditModal(this)"
+                            data-id="${item.id}"
+                            data-name="${item.name.replace(/"/g, '&quot;')}"
+                            data-type="${item.explosive_type}"
+                            data-desc="${(item.description || '').replace(/"/g, '&quot;')}"
+                            data-danger="${item.danger_level}"
+                            data-origin="${(item.country_of_origin || '').replace(/"/g, '&quot;')}"
+                            data-weight="${(item.weight || '').replace(/"/g, '&quot;')}"
+                            data-ignition="${(item.ignition_method || '').replace(/"/g, '&quot;')}"
+                            data-role="${(item.role || '').replace(/"/g, '&quot;')}"
+                            data-usage="${(item.usage || '').replace(/"/g, '&quot;')}"
+                            title="Edit Item">
+                      ✏️
+                    </button>
+                    ` : ''}
                   </div>
-                  <p>${item.description}</p>
-                  ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" style="max-width:200px; border-radius:8px; margin-top:0.5rem;"/>` : ''}
+                  
+                  <button class="reveal-btn" onclick="toggleDetails(this)">View Technical Data ▾</button>
+                  
+                  <div class="technical-data">
+                    <div class="item-meta">
+                      <strong>Danger Level:</strong> ${item.danger_level} |
+                      <strong>Origin:</strong> ${item.country_of_origin || "Unknown"} |
+                      <strong>Weight:</strong> ${item.weight || "N/A"}
+                    </div>
+                    <p style="margin-top:0.5rem; color:var(--text-secondary);">${item.description}</p>
+                  </div>
                 </div>
               `;
             });

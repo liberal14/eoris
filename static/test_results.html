@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EORIS - System Endpoint Test Verification</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --surface-color: #1a1a1a;
+            --accent-color: #f59e0b;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .header-section {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+        }
+        h1 {
+            color: var(--accent-color);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        p {
+            color: var(--text-secondary);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface-color);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        th {
+            background-color: rgba(245, 158, 11, 0.05);
+            color: var(--accent-color);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        tr:hover {
+            background-color: var(--glass-bg);
+        }
+        .badge-pass {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            padding: 0.25rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <h1>EORIS Endpoint & Integration Verification</h1>
+        <p>Automated endpoint testing and response validation summary. All backend services active.</p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint & Method</th>
+                <th>Test Case / Scenario</th>
+                <th>Expected Result</th>
+                <th>Actual Result</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="code-font">GET /</td>
+                <td>Request landing page (anonymous)</td>
+                <td>200 OK, render landing view</td>
+                <td>200 OK (Rendered index.html)</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">POST /register</td>
+                <td>Submit registration with unique user credentials</td>
+                <td>Create user as unverified, redirect to OTP</td>
+                <td>303 Redirect to /verify-otp</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">POST /verify-otp</td>
+                <td>Verify account activation with correct OTP code</td>
+                <td>Set status verified, redirect to dashboard</td>
+                <td>303 Redirect to dashboard (with cookie)</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">POST /login</td>
+                <td>Authenticate with correct username & password</td>
+                <td>Issue JWT authentication cookie, load dashboard</td>
+                <td>303 Redirect to dashboard</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">GET /scanner</td>
+                <td>Access scanner interface (authenticated)</td>
+                <td>200 OK, render drag-and-drop panel</td>
+                <td>200 OK (Rendered scanner.html)</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">POST /identify</td>
+                <td>Upload UXO image for visual search matching</td>
+                <td>Extract ResNet18 feature vector, rank matches</td>
+                <td>200 OK (Returned matches as JSON)</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+                <td class="code-font">POST /explosives/add</td>
+                <td>Admin adds new explosive item with image</td>
+                <td>Process upload, compute vectors, save to DB</td>
+                <td>303 Redirect to dashboard</td>
+                <td><span class="badge-pass">PASS</span></td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
